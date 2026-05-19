@@ -154,7 +154,85 @@ command: >
   ...
 ```
 
-Certifique-se de ajustar `--ngl` conforme o tamanho e número de camadas do novo modelo.
+Certifique-se de ajustar `--n-gpu-layers` conforme o tamanho e número de camadas do novo modelo.
+
+---
+
+## Download e Conversão de Modelos
+
+O script `download_and_convert.sh` automatiza o processo de baixar um modelo do HuggingFace, converter para GGUF e quantizar.
+
+### Pré-requisitos
+
+- Python 3 com `pip`
+- Docker
+- (Opcional) `HF_TOKEN` para modelos privados/gated
+
+### Uso
+
+```bash
+./download_and_convert.sh -r <hf_repo> -q <quantização> -o <arquivo_saída> [-v <volume>] [-w <work_dir>]
+```
+
+| Flag | Descrição | Obrigatório | Padrão |
+|------|-----------|-------------|--------|
+| `-r` | Repositório HuggingFace | ✅ | — |
+| `-q` | Algoritmo de quantização | ✅ | — |
+| `-o` | Nome do arquivo GGUF de saída | ✅ | — |
+| `-v` | Volume Docker destino | — | `ollama_llama_models` |
+| `-w` | Diretório de trabalho local | — | `./work` |
+
+### Algoritmos de Quantização Disponíveis
+
+| Algoritmo | Bits/peso | Uso de disco (30B) | Qualidade |
+|-----------|-----------|---------------------|-----------|
+| `F16` | 16 | ~60 GB | Referência |
+| `Q8_0` | 8 | ~30 GB | Excelente |
+| `Q5_K_M` | 5 | ~20 GB | Muito boa |
+| `Q4_K_M` | 4 | ~17 GB | Boa ✅ recomendado |
+| `Q3_K_M` | 3 | ~13 GB | Aceitável |
+| `Q2_K` | 2 | ~10 GB | Baixa |
+
+### Exemplos
+
+```bash
+# Granite 4.1 30B com Q4_K_M (configuração padrão deste projeto)
+./download_and_convert.sh \
+  -r ibm-granite/granite-4.1-30b \
+  -q Q4_K_M \
+  -o granite4.1-30b-Q4_K_M.gguf
+
+# Outro modelo com quantização diferente e volume personalizado
+./download_and_convert.sh \
+  -r meta-llama/Llama-3-8b \
+  -q Q5_K_M \
+  -o llama3-8b-Q5_K_M.gguf \
+  -v meu_volume
+
+# Apenas converter para F16 sem quantizar
+./download_and_convert.sh \
+  -r ibm-granite/granite-4.1-30b \
+  -q F16 \
+  -o granite4.1-30b-F16.gguf
+```
+
+### Para modelos privados ou gated
+
+```bash
+export HF_TOKEN="hf_seu_token_aqui"
+./download_and_convert.sh -r owner/model -q Q4_K_M -o model-Q4_K_M.gguf
+```
+
+### O que o script faz
+
+1. Instala `huggingface_hub` via pip
+2. Baixa os arquivos safetensors do HuggingFace para `./work/hf_model/`
+3. Converte para GGUF F16 usando `llama.cpp` via Docker (`ghcr.io/ggml-org/llama.cpp:full`)
+4. Quantiza para o algoritmo escolhido (pulado se `-q F16`)
+5. Remove o arquivo F16 intermediário
+6. Copia o GGUF final para o volume Docker especificado
+
+> Os arquivos ficam em `./work/`. Após confirmar que tudo funcionou, você pode limpar com `rm -rf ./work`.
 
 ### Acessar a API
 
