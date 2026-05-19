@@ -32,7 +32,12 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
-      - LLAMA_ARG_HOST=0.0.0.0
+      - LLAMA_ARG_HOST=
 
 volumes:
   llama_models:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./models
