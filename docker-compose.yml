@@ -17,7 +17,7 @@ services:
       -m /models/granite4.1-30b-Q4_K_M.gguf
       --host 0.0.0.0
       --port 8080
-      --ngl 38
+      --n-gpu-layers 38
       --n-cpu-moe 6
       --no-mmap
       --cache-type-k q8_0
@@ -32,6 +32,7 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - LLAMA_ARG_HOST=0.0.0.0
 
 volumes:
   llama_models:
